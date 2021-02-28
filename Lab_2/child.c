@@ -6,10 +6,11 @@
 #include <unistd.h> 
 #include <sys/wait.h>
 
+// Эта программа компилируется в print
 
 int main (int argc, char** argv)
 {
-     int reciever = 0;
+    int reciever = 0;
     sigset_t set;                       //набор сигналов
     sigemptyset(&set);                  //очищаем набор сигналов на который указывает 'set'
     sigaddset(&set, SIGUSR1);           //добовляем сигнал SIGUSR1
@@ -20,7 +21,7 @@ int main (int argc, char** argv)
     {
         for (int i = 1; i < argc - 1; i++)
         {
-            sigwait(&set, &reciever); //ждём сигнала
+            //sigwait(&set, &reciever); //ждём сигнала
             for (int k = 0; argv[i][k] != '\0'; k++)
             {
                 putchar(argv[i][k]);
@@ -28,7 +29,7 @@ int main (int argc, char** argv)
                 sleep(1);
                
             }
-             kill(getppid(), SIGUSR2);   //посылка сигнала процессу
+            //kill(getppid(), SIGUSR2);   //посылка сигнала процессу
     
         }
     }
