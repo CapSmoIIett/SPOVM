@@ -28,21 +28,21 @@ typedef struct
 
 int main ()
 {
-    int reciever = 0;
-    int counter = 0;
+    int sig = 0;
+    //int counter = 0;
 
     sigset_t set;                       // набор сигналов
     sigemptyset(&set);                  // sigemptyset инициализирует набор сигналов, указанный в set, и "очищает" его от всех сигналов.
     sigaddset(&set, SIGUSR2);           // добовляем сигнал SIGUSR2; добавляem сигналы signum к set 
                                         // В POSIX-системах, SIGUSR1 и SIGUSR2 — пользовательские сигналы, 
                                         // которые могут быть использованы для межпроцессной синхронизации и управления
-    sigprocmask(SIG_BLOCK, &set, NULL); // используется для того, чтобы изменить список блокированных в данный момент сигналов; получаем маcку сигнала текущего процесса
+    // sigprocmask(SIG_BLOCK, &set, NULL); // используется для того, чтобы изменить список блокированных в данный момент сигналов; получаем маcку сигнала текущего процесса
                                         // SIG_BLOCK- Набор блокируемых сигналов - объединение текущего набора и аргумента set.
    
 
     
     char command = 0;
-    pid_t streams[MAXAMOUNT] = {0};     // Массив с номерами потоков
+    //pid_t streams[MAXAMOUNT] = {0};     // Массив с номерами потоков
     
 
     /*
@@ -66,14 +66,14 @@ int main ()
         shared_data* data = (shared_data*)shmat(shmid, NULL, 0);
         while(true)
         {
-            counter = data->counter;  
+            int counter = data->counter;  
             if( counter > 0 &&  counter < MAXAMOUNT)
                 for (int i = 0; i <  counter; i++)
                 {
-                    printf("aa%d\n",  counter);
-                    //kill(((pid_t*)data)[i], SIGUSR1);   // посылка сигнала процессу
-                    //sigwait(&set, &reciever);    // приостанавливает работу потока и ждёт сигнала
-                    //printf("\n");
+                    //printf("aa%d\n",  counter);
+                    //kill(data->streams[i], SIGUSR1);   // посылка сигнала процессу
+                    //sigwait(&set, &sig);    // приостанавливает работу потока и ждёт сигнала
+                    //printf("\n\n");
                 }
         }
     }
@@ -103,6 +103,8 @@ int main ()
                                                     // идентифицированный shmid, к адресному пространству вызывающего 
                                                     // процесса. Адрес присоединения указывается shmaddr с одним из следующих критериев           
 
+    data->counter = 0;
+
 
 
     printf ("Entrer commands: ");
@@ -117,10 +119,12 @@ int main ()
         {
             case '+': 
             {
+                int counter = data->counter;
                 if (counter == MAXAMOUNT) break;                // Нельзя создать потоков больше чем MAXAMOUNT
                 pid_t p = fork();           
                 if (p == 0)                                     // Отправляем дочерний процесс выполнять программу print
                 {
+                    //printf("bb%d\n",  counter);
                     execl("print", " ",  Strings[counter]) ;    // После exec все присоединенные сегменты разделяемой памяти отсоединяются
                     return 0;
                 }
@@ -130,24 +134,24 @@ int main ()
                     shmdt(data);      
                     exit(-1);
                 } 
-                else streams[counter++] = p;            // Увеличиваем счетчик
+                else data->streams[counter++] = p;            // Увеличиваем счетчик
                 data->counter = counter;                // записываем данные в общую память
                 break;
             }            
             case '-': 
             {
-                if (counter == 0) break;                // Проверка на наличие потоков
-                kill(streams[--counter], SIGKILL);      // Убиваем дочерний процесс
-                data->counter = & counter;              // записываем новые данные в общую память
+                if (data->counter == 0) break;                // Проверка на наличие потоков
+                kill(data->streams[--data->counter], SIGKILL);      // Убиваем дочерний процесс
+                //data->counter = & counter;              // записываем новые данные в общую память
         
                 break;
             }   
             case 't' : printf("%d", data->counter); break;
             case 'q': case 'Q': 
             {
-                while(counter--)
+                while(data->counter--)
                 {
-                    kill(streams[counter], SIGKILL);
+                    kill(data->streams[data->counter], SIGKILL);
                 }
                 shmdt(data);  
                 shmctl(shmid, IPC_RMID, (struct shmid_ds *) 0);  // Удаляет общую память   

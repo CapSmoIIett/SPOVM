@@ -10,18 +10,17 @@
 
 int main (int argc, char** argv)
 {
-    int reciever = 0;
-    sigset_t set;                       //набор сигналов
-    sigemptyset(&set);                  //очищаем набор сигналов на который указывает 'set'
-    sigaddset(&set, SIGUSR1);           //добовляем сигнал SIGUSR1
-    sigprocmask(SIG_BLOCK, &set, NULL); //получаем маcку сигнала текущего процесса
-    int pid = getpid();                 //получаем PID
+    int sig = 0;
+    sigset_t set;                       // Набор сигналов
+    sigemptyset(&set);                  // Инициализирует набор сигналов, указанный в set, и "очищает" его от всех сигналов.
+    sigaddset(&set, SIGUSR1);           // Добавляют сигнал к set
+    //sigprocmask(SIG_BLOCK, &set, NULL); // Изменяет список блокированных в данный момент сигналов
 
     while (true)
     {
         for (int i = 1; i < argc - 1; i++)
         {
-            //sigwait(&set, &reciever); //ждём сигнала
+            //sigwait(&set, &sig);        // Ждем сигнал указанный в set
             for (int k = 0; argv[i][k] != '\0'; k++)
             {
                 putchar(argv[i][k]);
