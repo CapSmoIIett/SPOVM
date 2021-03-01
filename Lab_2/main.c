@@ -1,29 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <ncurses.h>
-
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/shm.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <signal.h>
-#include <unistd.h> 
-
-#define SHM_ID	2002      /* ключ разделяемой памяти */
-#define PERMS	0666      /* права доступа */
-
-
-#define MAXAMOUNT 7
+#include "header.h"
 
 char* Strings[] = {"a", "b", "c", "d", "e", "f", "g"}; 
-
-typedef struct
-{
-  int counter;
-  int streams[MAXAMOUNT];
-} shared_data;
 
 
 int main ()
@@ -31,18 +8,20 @@ int main ()
     int sig = 0;
     //int counter = 0;
 
-    sigset_t set;                       // набор сигналов
+    sigset_t set;                       // набор сигналов(маска)
+                                        // Маска сигналов - это набор сигналов, доставка которых
+                                        // в настоящее время заблокирован для вызывающего абонента.
     sigemptyset(&set);                  // sigemptyset инициализирует набор сигналов, указанный в set, и "очищает" его от всех сигналов.
     sigaddset(&set, SIGUSR2);           // добовляем сигнал SIGUSR2; добавляem сигналы signum к set 
                                         // В POSIX-системах, SIGUSR1 и SIGUSR2 — пользовательские сигналы, 
                                         // которые могут быть использованы для межпроцессной синхронизации и управления
-    // sigprocmask(SIG_BLOCK, &set, NULL); // используется для того, чтобы изменить список блокированных в данный момент сигналов; получаем маcку сигнала текущего процесса
+    sigprocmask(SIG_BLOCK, &set, NULL); // используется для того, чтобы изменить список блокированных в данный момент сигналов; 
+                                        // Получаем маcку(sigset_t) сигнала текущего процесса
                                         // SIG_BLOCK- Набор блокируемых сигналов - объединение текущего набора и аргумента set.
    
 
     
-    char command = 0;
-    //pid_t streams[MAXAMOUNT] = {0};     // Массив с номерами потоков
+    char command = 0;  
     
 
     /*
@@ -54,26 +33,31 @@ int main ()
 
 
     pid_t print_pid = fork();           // После fork потомок наследует присоединенный сегмент разделяемой памяти.
+    if (print_pid < 0) exit (-100);
     if (print_pid == 0)
     {
-         key_t key = ftok(".", 0); 
-         int shmid = shmget(key, sizeof(shared_data), IPC_CREAT);
-         if (shmid < 0) 
+        key_t key = ftok(".", 0); 
+        int shmid = shmget( key, sizeof(shared_data), 0);
+        if (shmid < 0) 
         {
-            printf ("SHMID1 err");
+            printf ("SHMID read err");
             exit (-1); 
         }
         shared_data* data = (shared_data*)shmat(shmid, NULL, 0);
+        data->output_manager = getpid();
+        
         while(true)
         {
             int counter = data->counter;  
             if( counter > 0 &&  counter < MAXAMOUNT)
-                for (int i = 0; i <  counter; i++)
+                for (int i = 0; i < counter; i++)
                 {
-                    //printf("aa%d\n",  counter);
-                    //kill(data->streams[i], SIGUSR1);   // посылка сигнала процессу
+                    //printf("%d\n", data->streams[i]);
+                    sleep(2);
+                    printf("GO\n");
+                    if (kill(data->streams[i], SIGUSR1))printf("Err in kill");   // посылка сигнала процессу
                     //sigwait(&set, &sig);    // приостанавливает работу потока и ждёт сигнала
-                    //printf("\n\n");
+                    
                 }
         }
     }
@@ -87,11 +71,11 @@ int main ()
                                                     // (который должен быть отличен от нуля) для создания 
                                                     // ключа с типом key_t, используемого в System V IPC 
                                                     // для работы с msgget(2), semget(2), и shmget(2).
-    int shmid = shmget(key, sizeof(shared_data), PERMS | IPC_CREAT);    // Получаем адресс созданного сегмента общей памяти
+    int shmid = shmget( key, sizeof(shared_data), PERMS | IPC_CREAT);    // Получаем адресс созданного сегмента общей памяти
                                                                 // shmid -  идентификатор сегмента
     if (shmid < 0) 
     {
-        printf ("SHMID1 err");
+        printf ("SHMID write err");
         exit (-1); 
     }   
                                                     // IPC_PRIVATE является не полем, а типом key_t. 
@@ -121,11 +105,13 @@ int main ()
             {
                 int counter = data->counter;
                 if (counter == MAXAMOUNT) break;                // Нельзя создать потоков больше чем MAXAMOUNT
-                pid_t p = fork();           
+                pid_t p = fork();         
+                if (p < 0) printf ("Something goes wrong");  
                 if (p == 0)                                     // Отправляем дочерний процесс выполнять программу print
                 {
                     //printf("bb%d\n",  counter);
-                    execl("print", " ",  Strings[counter]) ;    // После exec все присоединенные сегменты разделяемой памяти отсоединяются
+                    //execl("print", " ",  Strings[counter]) ;    // После exec все присоединенные сегменты разделяемой памяти отсоединяются
+                    execl("print", " ", Strings[counter]) ;
                     return 0;
                 }
                 else if (p == -1)
@@ -142,8 +128,6 @@ int main ()
             {
                 if (data->counter == 0) break;                // Проверка на наличие потоков
                 kill(data->streams[--data->counter], SIGKILL);      // Убиваем дочерний процесс
-                //data->counter = & counter;              // записываем новые данные в общую память
-        
                 break;
             }   
             case 't' : printf("%d", data->counter); break;
