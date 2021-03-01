@@ -50,15 +50,18 @@ int main ()
         {
             int counter = data->counter;  
             if( counter > 0 &&  counter < MAXAMOUNT)
+            {
+                printf("\n");
                 for (int i = 0; i < counter; i++)
                 {
-                    //printf("%d\n", data->streams[i]);
+                    //printf("%d\n",getpid());
                     sleep(2);
-                    printf("GO\n");
+                    //printf("GO\n");
                     if (kill(data->streams[i], SIGUSR1))printf("Err in kill");   // посылка сигнала процессу
-                    //sigwait(&set, &sig);    // приостанавливает работу потока и ждёт сигнала
-                    
+                    sigwait(&set, &sig);    // приостанавливает работу потока и ждёт сигнала
+                                        
                 }
+            }
         }
     }
 

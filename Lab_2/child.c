@@ -21,19 +21,20 @@ int main (int argc, char** argv)
 
     while (true)
     {
-        
+        sigwait(&set, &sig);        // Ждем сигнал указанный в set
         for (int i = 1; i < argc - 1; i++)
         {        
             for (int k = 0; argv[i][k] != '\0'; k++)
             {
                 printf("%c\n", argv[i][k]);
-                sleep(1);
+                //printf("%d\n", data->output_manager);
+                //sleep(1);
             }
         }
 
         //printf("A\n");
-        sigwait(&set, &sig);        // Ждем сигнал указанный в set
-        //if (kill(data->output_manager, SIGUSR2)) printf("Err in kill in child");   //посылка сигнала процессу 
+        
+        if (kill(data->output_manager, SIGUSR2)) printf("Err in kill in child");   //посылка сигнала процессу 
         //kill(par, SIGUSR2); 
         //shmdt(data);                           // Отсоединяет общую память
     }
