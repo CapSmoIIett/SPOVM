@@ -18,9 +18,7 @@ void AddThread();
 
 pthread_mutex_t PrintMutex;
 pthread_t WorkingThreads[MAX_COUNT];
-pthread_t ClosingThreads[MAX_COUNT];
 int NumThreads = 0;
-int QuitFlagsTreads[MAX_COUNT] = {0};
 
 /*
 pthread_t           — идентификатор потока;
@@ -37,10 +35,12 @@ pthread_attr_t      — перечень атрибутов потока.
 
 int main()
 {
+    char choice = 0;
+
     if(pthread_mutex_init(&PrintMutex, NULL) != 0)
     {
         printf("Error!\n");
-        endwin(); 
+        //endwin(); 
         return 0;
     }
 
@@ -51,20 +51,34 @@ int main()
 
     while(1)
     {
-        switch(getch())
+        choice = getchar();
+        switch(choice)
         {
-            case '+': if(NumThreads < MAX_COUNT) AddThread();
-                      else printf("\r\nToo much processes! Tou can't add anymore!\n\n");  break;
 
-            case '-': if(NumThreads > 0) CloseThread(); 
-                      else printf("\r\nNo more processes!\n\n"); break;
+            case '+':
+                    if (NumThreads < MAX_COUNT) { 
+                        AddThread();
+                    }
+                    else {
+                        printf("\r\nToo much processes! Tou can't add anymore!\n\n");  
+                    }
+                    break;
+
+            case '-': 
+                    if (NumThreads > 0) { 
+                        CloseThread(); 
+                    }
+                    else {
+                        printf("\r\nNo more processes!\n\n"); 
+                    } 
+                    break;
 
             case 'q':
-                while(NumThreads > 0) CloseThread();
-                pthread_mutex_destroy(&PrintMutex);
-                clear(); 
-                //endwin(); 
-                return 0;
+                    while(NumThreads > 0) CloseThread();
+                    pthread_mutex_destroy(&PrintMutex);
+                    clear(); 
+                    //endwin(); 
+                    return 0;
 
             default: break;
         }
@@ -72,9 +86,12 @@ int main()
 }
 
 
+
 void CloseThread()
 {
+
     pthread_cancel(WorkingThreads[NumThreads - 1]);    // Завершаем поток
+    //pthread_detach(WorkingThreads[NumThreads - 1]);
     pthread_join(WorkingThreads[NumThreads - 1], NULL);     // ждем завершения
     NumThreads--;
 }
@@ -83,7 +100,9 @@ void CloseThread()
 void AddThread()
 {
     pthread_t thread;
-    pthread_create(&thread, NULL, printString, (void*)&NumThreads);
+    pthread_attr_t attr; 
+    pthread_attr_init(&attr);   // получаем дефолтные значения атрибутов 
+    pthread_create(&thread, &attr, printString, (void*)&NumThreads);
     WorkingThreads[NumThreads] = thread;
     NumThreads++;
 }
@@ -96,11 +115,10 @@ void* printString(void* arg)
 
     while(1)
     {
-        if(QuitFlagsTreads[threadNumber]) break;
         pthread_mutex_lock(&PrintMutex);
         printf("%s%d\n",MESSAGE, threadNumber);
-        usleep(45000);
         pthread_mutex_unlock(&PrintMutex);
+        usleep(600000);     
     }
     return NULL;
 }
