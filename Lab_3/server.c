@@ -1,20 +1,20 @@
-#include <stdio.h>
-#include <string.h>
 #include "header.h"
 
-void sys_err (char *msg)
-{
-  puts (msg);
-  exit (1);
-}
+/*
+    0-ой семафор отображает занята ли общая память другим процессом
+    command - в общей памяти показывает требуемое действие 
+*/
+
+/*
+    Сервер отправляет сообщение
+*/
 
 int main ()
 {
     int semid;                    // идентификатор семафора 
     int shmid;                    // идентификатор разделяемой памяти 
-    key_t key;
-    message_t *msg_p;             // адрес сообщения в разделяемой памяти 
-    char s[MAXLENGTH];
+    message_t *shared_memory;             // адрес сообщения в разделяемой памяти 
+        char str[MAXLENGTH];
 
     semid = semget (SEM_ID, 1, PERMS | IPC_CREAT); // создание массива семафоров из одного элемента 
     if (semid < 0)
@@ -22,54 +22,54 @@ int main ()
         printf("server semaphore err");
         exit (-1);
     }
-
-    
-    shmid = shmget (SHM_ID, sizeof (message_t), PERMS | IPC_CREAT);    // создание сегмента разделяемой памяти s
+ 
+    shmid = shmget(SHM_ID, sizeof (message_t), PERMS | IPC_CREAT);    // Создаем сегмент общей памяти
     if (shmid < 0)
     {
-        printf("server shared memory err");
+        printf("server 1 shared memory err");
         exit(-1);
     }
 
-    msg_p = (message_t *) shmat (shmid, 0, 0);  // подключение сегмента к адресному пространству процесса */
-    if (msg_p)
+    shared_memory = (message_t *) shmat (shmid, 0, 0);                      // Получаем адресс сегмента
+    if (shared_memory == NULL)
     {
-        printf("server shared memory error");
+        printf("server 2 shared memory error");
         exit(-1);
     }
 
-    semctl (semid, 0, SETVAL, 0); /* установка семафора */
-    msg_p->type = MSG_TYPE_EMPTY;
+    semctl(semid, 0, SETVAL, 0);                                   // Устанавливаем семафор
+    shared_memory->command = MSGEMPTY;
+
+
+
 
 
     while (1)
     {
-        if (msg_p->type != MSG_TYPE_EMPTY)
-            {
-            if (semctl (semid, 0, GETVAL, 0))     /* блокировка - ждать */
-                continue;
+        scanf ("%s", str);
+        while (semctl (semid, 0, GETVAL, 0) || shared_memory->command != MSGEMPTY);      // Если 0-ой семафор занят или прошлое сообщение небыло обработанно - ждем                                                
+        
+        semctl (semid, 0, SETVAL, 1);               // Устанавливаем 0-й семафор, чтобы нам никто не мешал
 
-            semctl (semid, 0, SETVAL, 1); /* установить блокировку */
+        if (strcmp(str, ":q") == 0 )                // Выход в стиле Vim
+        {
+            shared_memory->command = MSGFINISH;     // Сообщаем о завершении работы
+            semctl(semid, 0, SETVAL, 0);            // Снимаем блокировку (обнуляем 0-й семафор)
+            break;
+        }
+ 
+                 
+        strncpy (shared_memory->string, str, MAXLENGTH);    // Записываем строку в общую память
+        shared_memory->command = MSGSTRING;                 // И даем команду на вывод
 
-            /* обработка сообщения */
-            if (msg_p->type == MSG_TYPE_STRING)
-                printf ("%s\n", msg_p->string);
-            if (msg_p->type == MSG_TYPE_FINISH)
-                break;
-
-            msg_p->type = MSG_TYPE_EMPTY; /* сообщение обработано */
-            semctl (semid, 0, SETVAL, 0); /* снять блокировку */
-            }
+        semctl (semid, 0, SETVAL, 0);     // Снимаем блокировку 
     }
 
-    /* удаление массива семафоров */
-    if (semctl (semid, 0, IPC_RMID, (struct semid_ds *) 0) < 0)
-        sys_err ("server: semaphore remove error");
+    while (semctl (semid, 0, GETVAL, 0) || shared_memory->command != MSGEMPTY);            // Ждем пока клиент заметит окончание программы и отреагирует на него
+                                                                                           // нам нельзя сразу завершаться, так как здесь мы удаляем общую память и семафоры  
+    semctl(semid, 0, IPC_RMID, (struct semid_ds *) 0);     // удаление массива семафоров 
+    shmdt (shared_memory);
+    shmctl(shmid, IPC_RMID, (struct shmid_ds *) 0);        // удаление сегмента разделяемой памяти 
 
-    /* удаление сегмента разделяемой памяти */
-    shmdt (msg_p);
-    if (shmctl (shmid, IPC_RMID, (struct shmid_ds *) 0) < 0)
-        sys_err ("server: shared memory remove error");
-
-    exit (0);
+    return 0;
 }
