@@ -14,7 +14,7 @@ int main (int argc, char** argv)
     if (shmid < 0) 
     {
         printf ("SHMID read child %d err", getpid());
-        //exit (-1); 
+        exit (-1); 
     }
     shared_data* data = (shared_data*)shmat(shmid, NULL, 0);
 

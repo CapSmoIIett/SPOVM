@@ -1,4 +1,33 @@
 #include <stdio.h>
+#include <pthread.h>
+
+void threadReader();
+void threadWriter();
+
+in main ()
+{
+    pthread_t pthRead;
+    pthread_t pthWhrt;                                                       // Индефикатор потока (указатель на поток)
+    pthread_create(&pthRead, NULL, threadReader, NULL);                      // Создаем поток читателя
+    pthread_create(&pthWrht, NULL, threadWriter, NULL);                      // Создаем поток писателя
+
+
+    pthread_cancel(pthRead);                        // Завершаем потоки
+    pthread_cancel(pthWrht);  
+    return 0;
+}
+
+void threadReader()
+{
+
+}
+
+void threadWriter()
+{
+
+}
+
+/*#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <unistd.h>
@@ -30,7 +59,7 @@ pthread_key_t       — данные, специфичные для потока
 pthread_once_t      — контекст контроля динамической инициализации;
 pthread_attr_t      — перечень атрибутов потока.
 */
-
+/*
 
 
 int main()
@@ -120,4 +149,4 @@ void* printString(void* arg)
     return NULL;
 }
 
-
+*/
