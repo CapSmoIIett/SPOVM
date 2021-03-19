@@ -1,30 +1,40 @@
-#include <stdio.h>
-#include <pthread.h>
+#include "header.h"
+//#include <stdio.h>
 
-void threadReader();
-void threadWriter();
+void* threadReader(void*);
+void* threadWriter(void*);
 
-in main ()
+int main ()
 {
-    pthread_t pthRead;
-    pthread_t pthWhrt;                                                       // Индефикатор потока (указатель на поток)
-    pthread_create(&pthRead, NULL, threadReader, NULL);                      // Создаем поток читателя
-    pthread_create(&pthWrht, NULL, threadWriter, NULL);                      // Создаем поток писателя
+    printf("Work\n");
+    /*pthread_t pthRead;
+    pthread_t pthWrt;                                                       // Индефикатор потока (указатель на поток)
+    
+    pthread_attr_t attr1;                                                    // Парамметры потоков
+    pthread_attr_t attr2;                                              
+    
+    pthread_attr_init(&attr1);                                               // получаем дефолтные значения атрибутов 
+    pthread_attr_init(&attr2);                                            
+
+    pthread_create(&pthRead, &attr1, threadReader, (void*)NULL);                      // Создаем поток читателя
+    pthread_create(&pthWrt,  &attr2, threadWriter, (void*)NULL);                      // Создаем поток писателя
 
 
     pthread_cancel(pthRead);                        // Завершаем потоки
-    pthread_cancel(pthWrht);  
+    pthread_cancel(pthWrt); */ 
     return 0;
 }
 
-void threadReader()
+void* threadReader(void* a)
 {
 
+    return (void*) NULL;
 }
 
-void threadWriter()
+void* threadWriter(void* a)
 {
 
+    return (void*) NULL;
 }
 
 /*#include <stdio.h>
