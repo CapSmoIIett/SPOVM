@@ -1,10 +1,22 @@
-#include "header.h"
+#include <stdio.h>
+#include <stdlib.h>
+//#include <aio.h>
+#include <dlfcn.h>
+#include <unistd.h>
+#include <pthread.h>
 
-extern int fileRead()
+
+
+int fileRead();
+int fileWrite();
+
+int fileRead()
 {
-    return 0;
+    printf("Read\n");
+    return 100;
 }
-extern int fileWrite()
+int fileWrite()
 {
+    printf("Write\n");
     return 0;
 }

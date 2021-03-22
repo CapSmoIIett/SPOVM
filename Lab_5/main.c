@@ -1,12 +1,46 @@
-#include "header.h"
-//#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+//#include <aio.h>
+#include <dlfcn.h>
+#include <unistd.h>
+#include <pthread.h>
+
 
 void* threadReader(void*);
 void* threadWriter(void*);
 
 int main ()
 {
+    void* handle;
+    int (*fun)();
+    char *error;
+
     printf("Work\n");
+
+    handle = dlopen("/home/matthew/Projects/Laboratory/Курс 2/СПОВМ/Lab_5/lmylib.so", RTLD_LAZY);  // загружаеv динамическую библиотеку
+    if (!handle) {
+        printf("%s", dlerror());
+        exit(1);
+    }
+
+
+    fun = dlsym(handle, "fileRead");
+    if ((error = dlerror()) != NULL)  {
+        fprintf (stderr, "%s\n", error);
+        exit(1);
+    }
+
+    int n = (*fun)();
+    printf("%d", n);
+
+    if(dlclose(handle) != 0){       // dlclose уменьшает на единицу счетчик ссылок на указатель
+        printf("%s", dlerror());    // динамической библиотеки handle. Если нет других загруженных 
+    }                               // библиотек, использующих ее символы и если счетчик ссылок 
+                                    // принимает нулевое значение, то динамическая библиотека выгружается
+    
+    
+                    
+    //fileWrite();
     /*pthread_t pthRead;
     pthread_t pthWrt;                                                       // Индефикатор потока (указатель на поток)
     

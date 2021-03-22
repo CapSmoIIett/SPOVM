@@ -1,11 +1,12 @@
 all:
 	clear
 	gcc -fPIC -c mylib.c 
-	gcc -shared -o lmylib.so mylib.o
+	gcc -shared  -nostartfiles -o lmylib.so mylib.o
 	gcc -c main.c
-	gcc main.o -L. lmylib -o main 
+	gcc -rdynamic main.o  -o main -ldl
+
 	./main 
-	#rm mylib.o
+	
 	
 	
 

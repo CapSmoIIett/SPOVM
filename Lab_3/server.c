@@ -41,9 +41,6 @@ int main ()
     shared_memory->command = MSGEMPTY;
 
 
-
-
-
     while (1)
     {
         scanf ("%s", str);
