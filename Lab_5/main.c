@@ -31,7 +31,14 @@ int main ()
     }
 
     int n = (*fun)();
-    printf("%d", n);
+    printf("%d\n", n);
+
+    fun = dlsym(handle, "fileWrite");
+    if ((error = dlerror()) != NULL)  {
+        fprintf (stderr, "%s\n", error);
+        exit(1);
+    }
+    (*fun)();
 
     if(dlclose(handle) != 0){       // dlclose уменьшает на единицу счетчик ссылок на указатель
         printf("%s", dlerror());    // динамической библиотеки handle. Если нет других загруженных 
