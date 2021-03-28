@@ -2,8 +2,8 @@ all:
 	clear
 	gcc -fPIC -c mylib.c 
 	gcc -shared  -nostartfiles -o lmylib.so mylib.o -lrt
-	gcc -c main.c
-	gcc -rdynamic main.o  -o main -ldl
+	gcc -c main.c 
+	gcc -rdynamic main.o  -o main -ldl -lpthread
 
 	./main 
 	

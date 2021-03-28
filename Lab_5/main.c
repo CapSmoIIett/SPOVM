@@ -1,52 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 //#include <aio.h>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <pthread.h>
 
+#define LIBADRESS  "/home/matthew/Projects/Laboratory/Курс 2/СПОВМ/Lab_5/lmylib.so"
+
+pthread_mutex_t stdoutMutex;
 
 void* threadReader(void*);
 void* threadWriter(void*);
+pthread_t addThread(void* (*)(void*));
+void closeThread (pthread_t);
 
-int main ()
-{
-    void* handle;
-    int (*fun)();
-    char *error;
+void _print(char*);
 
-    printf("Work\n");
 
-    handle = dlopen("/home/matthew/Projects/Laboratory/Курс 2/СПОВМ/Lab_5/lmylib.so", RTLD_LAZY);  // загружаеv динамическую библиотеку
-    if (!handle) {
-        printf("%s", dlerror());
-        exit(1);
+int main (){
+    if(pthread_mutex_init(&stdoutMutex, NULL) != 0) {             // Создаем mutex
+        _print ("Error!\n");
+        return 0;
     }
 
-
-    fun = dlsym(handle, "fileRead");
-    if ((error = dlerror()) != NULL)  {
-        fprintf (stderr, "%s\n", error);
-        exit(1);
-    }
-
-    int n = (*fun)();
-    printf("%d\n", n);
-
-    fun = dlsym(handle, "fileWrite");
-    if ((error = dlerror()) != NULL)  {
-        fprintf (stderr, "%s\n", error);
-        exit(1);
-    }
-    (*fun)();
-
-    if(dlclose(handle) != 0){       // dlclose уменьшает на единицу счетчик ссылок на указатель
-        printf("%s", dlerror());    // динамической библиотеки handle. Если нет других загруженных 
-    }                               // библиотек, использующих ее символы и если счетчик ссылок 
-                                    // принимает нулевое значение, то динамическая библиотека выгружается
+    pthread_t thWrite  = addThread (threadWriter);
     
+    usleep(10000);
+
+    pthread_t thReader = addThread (threadReader);
     
-                    
+
+    usleep(10000);
+
+    closeThread (thReader);
+    closeThread (thWrite);
+    //threadReader(NULL);
+    pthread_mutex_destroy(&stdoutMutex);         // Уничтожаем mutex
+
+    //threadWriter(NULL);           
     //fileWrite();
     /*pthread_t pthRead;
     pthread_t pthWrt;                                                       // Индефикатор потока (указатель на поток)
@@ -66,138 +58,79 @@ int main ()
     return 0;
 }
 
-void* threadReader(void* a)
-{
+void* threadReader(void* a){
+    void* handle;
+    char* (*fun) ();
+    char *error;
 
+    handle = dlopen (LIBADRESS, RTLD_LAZY);  // загружаеm динамическую библиотеку
+
+    if (!handle) {
+        _print (dlerror());
+        exit (1);
+    }
+
+
+    fun = dlsym (handle, "fileRead");
+    if ((error = dlerror ()) != NULL)  {
+        _print(error);
+        exit (1);
+    }
+
+    char* message = (*fun) ();
+
+    _print (message);
+
+    if(dlclose (handle) != 0){       // dlclose уменьшает на единицу счетчик ссылок на указатель
+        _print (dlerror());    // динамической библиотеки handle. Если нет других загруженных 
+    }                               // библиотек, использующих ее символы и если счетчик ссылок 
+                                    // принимает нулевое значение, то динамическая библиотека выгружается
+    
+    free (message);
     return (void*) NULL;
 }
 
-void* threadWriter(void* a)
-{
+void* threadWriter (void* a){
+    void* handle;
+    int (*fun) (char*, int );
+    char *error;
 
+    handle = dlopen (LIBADRESS, RTLD_LAZY);  // загружаеv динамическую библиотеку
+
+    if (!handle) {
+        _print (dlerror());
+        exit (1);
+    }
+
+    fun = dlsym (handle, "fileWrite");
+    if ((error = dlerror ()) != NULL)  {
+        _print (error);
+        exit (1);
+    }
+ 
+    (*fun) ("Am I evil?\n", 11);
+
+    if(dlclose(handle) != 0){    
+        _print (dlerror());    
+    }                                  
+    
     return (void*) NULL;
 }
 
-/*#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <unistd.h>
-#include <termios.h>
-#include <ncurses.h>
-#include <pthread.h>
 
-
-#define MAX_COUNT 100
-#define MESSAGE "This process: "
-
-
-void* printString(void* arg);
-void CloseThread();
-void WaitThreads();
-void AddThread();
-
-pthread_mutex_t PrintMutex;
-pthread_t WorkingThreads[MAX_COUNT];
-int NumThreads = 0;
-
-/*
-pthread_t           — идентификатор потока;
-pthread_mutex_t     — мютекс;
-pthread_mutexattr_t — объект атрибутов мютекса
-pthread_cond_t      — условная переменная
-pthread_condattr_t  — объект атрибута условной переменной;
-pthread_key_t       — данные, специфичные для потока;
-pthread_once_t      — контекст контроля динамической инициализации;
-pthread_attr_t      — перечень атрибутов потока.
-*/
-/*
-
-
-int main()
-{
-    char choice = 0;
-
-    if(pthread_mutex_init(&PrintMutex, NULL) != 0)              // Создаем mutex
-    {
-        printf("Error!\n");
-        return 0;
-    }
-
-    while(1)
-    {
-        choice = getchar();
-        switch(choice)
-        {
-
-            case '+':
-                    if (NumThreads < MAX_COUNT) { 
-                        AddThread();
-                    }
-                    else {
-                        pthread_mutex_lock(&PrintMutex);
-                        printf("\r\nMax amount of process\n\n");
-                        pthread_mutex_unlock(&PrintMutex);  
-                    }
-                    break;
-
-            case '-': 
-                    if (NumThreads > 0) { 
-                        CloseThread(); 
-                    }
-                    else {
-                        pthread_mutex_lock(&PrintMutex);
-                        printf("\r\nNet Procesov\n\n");
-                        pthread_mutex_unlock(&PrintMutex); 
-                    } 
-                    break;
-
-            case 'q':
-                    while(NumThreads > 0) CloseThread();
-                    pthread_mutex_destroy(&PrintMutex);         // Уничтожаем mutex 
-                    clear(); 
-                    return 0;
-
-            default: break;
-        }
-    }
-}
-
-
-
-void CloseThread()
-{
-
-    pthread_cancel(WorkingThreads[NumThreads - 1]);    // Завершаем поток
-    //pthread_detach(WorkingThreads[NumThreads - 1]);
-    //pthread_join(WorkingThreads[NumThreads - 1], NULL);     // ждем завершения b получаем значения
-    NumThreads--;
-}
-
-
-void AddThread()
-{
+pthread_t addThread (void* (*fun)(void*)){
     pthread_t thread;                                                       // Индефикатор потока (указатель на поток)
     pthread_attr_t attr;                                                    // Парамметры потока
-    pthread_attr_init(&attr);                                               // получаем дефолтные значения атрибутов 
-    pthread_create(&thread, &attr, printString, (void*)&NumThreads);        // Создаем поток
-    WorkingThreads[NumThreads] = thread;
-    NumThreads++;
+    pthread_attr_init (&attr);                                               // получаем дефолтные значения атрибутов 
+    pthread_create (&thread, &attr, fun, NULL);        // Создаем поток
+    return thread;
+}
+void closeThread (pthread_t thread){
+    pthread_cancel (thread);    // Завершаем поток
 }
 
-
-
-void* printString(void* arg)
-{
-    int threadNumber = *((int*)arg);   // Номер данного потока
-
-    while(1)
-    {
-        pthread_mutex_lock(&PrintMutex);           // Мьютим вывод, чтобы не пересикались выводы
-        printf("%s%d\n",MESSAGE, threadNumber);
-        pthread_mutex_unlock(&PrintMutex);
-        usleep(600000);     
-    }
-    return NULL;
+void _print (char* msg){
+    pthread_mutex_lock (&stdoutMutex);           // Мьютим вывод, чтобы не пересикались выводы
+    printf ("%s\n", msg);
+    pthread_mutex_unlock (&stdoutMutex);
 }
-
-*/

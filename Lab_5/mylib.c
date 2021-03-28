@@ -15,76 +15,70 @@ struct aiocb createIoRequest(int fd,
     // E.g. through sigevent op.aio_sigevent there could be 
     //      a callback function being set, that the program
     //      tries to call - which will then fail.
-    struct aiocb ret = {0};
+    struct aiocb status = {0};
     {
-        ret.aio_fildes = fd;
-        ret.aio_offset = offset;
-        ret.aio_buf = content;
-        ret.aio_nbytes = length;            
+        status.aio_fildes = fd;
+        status.aio_offset = offset;
+        status.aio_buf = content;
+        status.aio_nbytes = length;            
     }
-    return ret;
+    return status;
 }
 
-int fileRead();
-int fileWrite();
-
-int fileRead()
+char* fileRead()
 {
     FILE* file = fopen("outfile.txt","r");
     int fd = fileno(file);                                      // Файловый дескриптор
-    char buf[20];
-    {
-        
-        struct aiocb op  = createIoRequest(fd,0, buf, 20);        
+    int status;                                                 // status basically equal 0
+    char* buf;
 
-        //aio_write(&op);
-        int ret = aio_read(&op);
-        printf("aio_write 1: %d\n",ret);
+    buf = (char*)calloc(20, sizeof(char));                     // alocate memory
 
-        {
-            const struct aiocb * aiolist[1];
-            aiolist[0] = &op;
+    printf("Read\n");
 
-            int ret = aio_suspend(aiolist,1,NULL);
-            printf("aio_suspend: %d\n",ret);
+    struct aiocb op  = createIoRequest(fd, 0, buf, 20);        
 
-            // report possible errors
-            {
-                ret = aio_error(&op);
-                printf("errno 1: %d\n",ret);
-            }
-        }
-    }
-    printf("%s\n",buf);
+    status = aio_read(&op);
+    if(status) printf("aio_read_error: %d\n", status);
+
+    const struct aiocb * aiolist[1];
+    aiolist[0] = &op;
+
+    status = aio_suspend(aiolist, 1, NULL);
+    if (status) printf("aio_suspend_err: %d\n", status);
+
+    status = aio_error(&op);
+    if (status) printf("errno: %d\n", status);        // report possible errors
+
     fclose(file);
-    return 0;
+    return buf;
 }
 
-int fileWrite()
+int fileWrite(char* message, int size)
 {
     FILE* file = fopen("outfile.txt","w");
     int fd = fileno(file);                                      // Файловый дескриптор
-    {
-        struct aiocb op  = createIoRequest(fd,0,"Shit\n", 5);        
+    
+    int status;
 
-        //aio_write(&op);
-        int ret = aio_write(&op);
-        printf("aio_write 1: %d\n",ret);
+    printf("Write\n");
 
-        {
-            const struct aiocb * aiolist[1];
-            aiolist[0] = &op;
+    struct aiocb op  = createIoRequest(fd, 0, message, size);        
 
-            int ret = aio_suspend(aiolist,1,NULL);
-            printf("aio_suspend: %d\n",ret);
+    status = aio_write(&op);
+    if (status) printf("aio_write: %d\n", status);
 
-            // report possible errors
-            {
-                ret = aio_error(&op);
-                printf("errno 1: %d\n",ret);
-            }
-        }
-    }
+    const struct aiocb * aiolist[1];
+    aiolist[0] = &op;
+
+    status = aio_suspend(aiolist,1,NULL);
+    if (status) printf("aio_suspend: %d\n",status);
+
+    status = aio_error(&op);
+    if (status) printf("errno 1: %d\n",status);        // report possible errors
+    
+        
+    
     fclose(file);
     return 0;
 }
