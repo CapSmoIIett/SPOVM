@@ -7,7 +7,7 @@
 #include <pthread.h>
 
 #define LIBADRESS  "/home/matthew/Projects/Laboratory/Курс 2/СПОВМ/Lab_5/lmylib.so"
-
+#define NAMEFILE  "outfile.txtt"
 pthread_mutex_t stdoutMutex;
 
 void* threadReader(void*);
@@ -60,7 +60,7 @@ int main (){
 
 void* threadReader(void* a){
     void* handle;
-    char* (*fun) ();
+    char* (*fun) (char*);
     char *error;
 
     handle = dlopen (LIBADRESS, RTLD_LAZY);  // загружаеm динамическую библиотеку
@@ -77,7 +77,7 @@ void* threadReader(void* a){
         exit (1);
     }
 
-    char* message = (*fun) ();
+    char* message = (*fun) (NAMEFILE);
 
     _print (message);
 
@@ -92,7 +92,7 @@ void* threadReader(void* a){
 
 void* threadWriter (void* a){
     void* handle;
-    int (*fun) (char*, int );
+    int (*fun) (char*, char*);
     char *error;
 
     handle = dlopen (LIBADRESS, RTLD_LAZY);  // загружаеv динамическую библиотеку
@@ -108,7 +108,7 @@ void* threadWriter (void* a){
         exit (1);
     }
  
-    (*fun) ("Am I evil?\n", 11);
+    (*fun) (NAMEFILE, "Am I evil?\n");
 
     if(dlclose(handle) != 0){    
         _print (dlerror());    

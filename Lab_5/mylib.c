@@ -25,9 +25,9 @@ struct aiocb createIoRequest(int fd,
     return status;
 }
 
-char* fileRead()
+char* fileRead(char* nameFile)
 {
-    FILE* file = fopen("outfile.txt","r");
+    FILE* file = fopen (nameFile, "r");
     int fd = fileno(file);                                      // Файловый дескриптор
     int status;                                                 // status basically equal 0
     char* buf;
@@ -54,16 +54,21 @@ char* fileRead()
     return buf;
 }
 
-int fileWrite(char* message, int size)
+int fileWrite(char* nameFile, char* message)
 {
-    FILE* file = fopen("outfile.txt","w");
+    FILE* file = fopen(nameFile,"w");
     int fd = fileno(file);                                      // Файловый дескриптор
     
-    int status;
+    int status = 0;
+    int length = 0;
+
+    while (message[length++] != '\0');
 
     printf("Write\n");
 
-    struct aiocb op  = createIoRequest(fd, 0, message, size);        
+
+
+    struct aiocb op  = createIoRequest(fd, 0, message, length);        
 
     status = aio_write(&op);
     if (status) printf("aio_write: %d\n", status);
