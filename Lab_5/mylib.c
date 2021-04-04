@@ -32,11 +32,11 @@ char* fileRead(char* nameFile)
     int status;                                                 // status basically equal 0
     char* buf;
 
-    buf = (char*)calloc(20, sizeof(char));                     // alocate memory
+    buf = (char*)calloc(200, sizeof(char));                     // alocate memory
 
     printf("Read\n");
 
-    struct aiocb op  = createIoRequest(fd, 0, buf, 20);        
+    struct aiocb op  = createIoRequest(fd, 0, buf, 200);        
 
     status = aio_read(&op);
     if(status) printf("aio_read_error: %d\n", status);
@@ -56,7 +56,7 @@ char* fileRead(char* nameFile)
 
 int fileWrite(char* nameFile, char* message)
 {
-    FILE* file = fopen(nameFile,"w");
+    FILE* file = fopen(nameFile,"a");
     int fd = fileno(file);                                      // Файловый дескриптор
     
     int status = 0;
@@ -68,7 +68,7 @@ int fileWrite(char* nameFile, char* message)
 
 
 
-    struct aiocb op  = createIoRequest(fd, 0, message, length);        
+    struct aiocb op  = createIoRequest(fd, 0, message, length - 1);        
 
     status = aio_write(&op);
     if (status) printf("aio_write: %d\n", status);
