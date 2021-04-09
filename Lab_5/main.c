@@ -75,7 +75,7 @@ int main (){
 
     usleep(100000);
     //ret = pthread_join(thReader, NULL);
-    ret = pthread_join(thWrite, NULL);
+    ret = pthread_join(thWrite, NULL);                             // Ждем окончания потока записи. Он закончится позже потока чтения 
     // НУЖНО ЖДАТЬ ПОКА ПОТОКИ ЗАКРОЮТСЯ
 
     closeThread (thReader);                                         // Закрываем потоки

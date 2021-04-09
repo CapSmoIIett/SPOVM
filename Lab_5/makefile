@@ -1,7 +1,10 @@
 all:
 	clear
 	gcc -fPIC -c mylib.c 
+	# -f - это префикс gcc для опций. PIC расшифровывается как "позиционно-независимый код"
 	gcc -shared  -nostartfiles -o lmylib.so mylib.o -lrt
+	#когда не хотите, чтобы какие-либо стандартные библиотеки (например, libc и libgcc) были 
+	#связаны и выполнялись стандартные действия инициализации, такие как вызов конструкторов C ++
 	gcc -g -c main.c 
 	gcc -g -rdynamic main.o  -o main -ldl -lpthread
 
